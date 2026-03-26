@@ -1,0 +1,116 @@
+using GameDevStudio.Events;
+using GameDevStudio.Models;
+
+namespace GameDevStudio.Core
+{
+    /// <summary>
+    /// Manages the studio's stats (money, reputation, office tier).
+    /// Acts as the authoritative source for <see cref="StudioStats"/>.
+    /// </summary>
+    public class StudioManager
+    {
+        public StudioStats Stats { get; private set; } = new StudioStats();
+
+        // ── Initialisation ────────────────────────────────────────────────────
+        public void Initialise(string studioName)
+        {
+            Stats = new StudioStats { StudioName = studioName };
+            // Unlock starter genre & platform
+            Stats.UnlockedGenreIds.Add("genre_action");
+            Stats.UnlockedPlatformIds.Add("platform_mobile");
+        }
+
+        public void RestoreStats(StudioStats saved) => Stats = saved;
+
+        // ── Money ─────────────────────────────────────────────────────────────
+        public void AddMoney(float amount)
+        {
+            float old = Stats.Money;
+            Stats.AddMoney(amount);
+            GameEventBus.Publish(new MoneyChangedEvent
+            {
+                OldAmount = old,
+                NewAmount = Stats.Money,
+                Delta     = amount
+            });
+        }
+
+        public bool TrySpend(float cost)
+        {
+            if (!Stats.CanAfford(cost)) return false;
+            AddMoney(-cost);
+            return true;
+        }
+
+        // ── Reputation ────────────────────────────────────────────────────────
+        public void AddReputation(float delta)
+        {
+            float old = Stats.Reputation;
+            Stats.Reputation += delta;
+            Stats.ClampReputation();
+            GameEventBus.Publish(new ReputationChangedEvent
+            {
+                OldValue = old,
+                NewValue = Stats.Reputation
+            });
+        }
+
+        // ── Office ────────────────────────────────────────────────────────────
+        /// <summary>
+        /// Costs to upgrade to each office tier indexed by (target tier - 1).
+        /// </summary>
+        private static readonly float[] UpgradeCosts = { 10_000f, 50_000f, 200_000f, 1_000_000f };
+
+        public bool CanUpgradeOffice()
+        {
+            int next = Stats.OfficeTier + 1;
+            if (next >= UpgradeCosts.Length + 1) return false;
+            return Stats.CanAfford(UpgradeCosts[Stats.OfficeTier]);
+        }
+
+        public bool TryUpgradeOffice()
+        {
+            if (!CanUpgradeOffice()) return false;
+            TrySpend(UpgradeCosts[Stats.OfficeTier]);
+            Stats.OfficeTier++;
+            GameEventBus.Publish(new NotificationEvent
+            {
+                Message  = $"Office upgraded to tier {Stats.OfficeTier}! Max staff: {Stats.MaxStaff}.",
+                Severity = NotificationSeverity.Success
+            });
+            return true;
+        }
+
+        public float GetOfficeTierUpgradeCost()
+        {
+            int next = Stats.OfficeTier;
+            return next < UpgradeCosts.Length ? UpgradeCosts[next] : float.MaxValue;
+        }
+
+        public string GetOfficeTierName() => Stats.OfficeTier switch
+        {
+            0 => "Garage",
+            1 => "Small Office",
+            2 => "Medium Office",
+            3 => "Large Studio",
+            4 => "Corporate Campus",
+            _ => "Unknown"
+        };
+
+        // ── Genre / Platform unlocks ──────────────────────────────────────────
+        public void UnlockGenre(string genreId)
+        {
+            if (!Stats.UnlockedGenreIds.Contains(genreId))
+                Stats.UnlockedGenreIds.Add(genreId);
+        }
+
+        public void UnlockPlatform(string platformId)
+        {
+            if (!Stats.UnlockedPlatformIds.Contains(platformId))
+                Stats.UnlockedPlatformIds.Add(platformId);
+        }
+
+        public bool IsGenreUnlocked(string genreId)    => Stats.UnlockedGenreIds.Contains(genreId);
+        public bool IsPlatformUnlocked(string platform) => Stats.UnlockedPlatformIds.Contains(platform);
+    }
+}
