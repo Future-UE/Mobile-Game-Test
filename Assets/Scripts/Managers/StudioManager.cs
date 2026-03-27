@@ -128,9 +128,9 @@ namespace GameDevStudio.Core
                 Stats.UnlockedStaffRoleIds.Add(staffRoleId);
         }
 
-        // Remove the closing brace that was previously the end of the class
-    }
-}
+        public bool IsGenreUnlocked(string genreId)       => Stats.UnlockedGenreIds.Contains(genreId);
+        public bool IsPlatformUnlocked(string platformId) => Stats.UnlockedPlatformIds.Contains(platformId);
+        public bool IsStaffRoleUnlocked(string roleId)    => Stats.UnlockedStaffRoleIds.Contains(roleId);
 
         // ── Reputation gain multiplier ────────────────────────────────────────
         /// <summary>
@@ -148,4 +148,5 @@ namespace GameDevStudio.Core
             }
             return multiplier;
         }
+    }
 }

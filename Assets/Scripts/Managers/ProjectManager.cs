@@ -192,7 +192,9 @@ namespace GameDevStudio.Core
                         + design * (genre?.DesignWeight     ?? 0.25f);
             qGain /= mult;
 
-            project.QualityPoints += qGain;
+            // Apply research quality bonus
+            float researchBonus = GameManager.Instance.Research.GetTotalQualityBonus();
+            project.QualityPoints += qGain + researchBonus;
 
             // Bugs introduced proportional to code volume
             if (UnityEngine.Random.value < 0.3f)
@@ -242,7 +244,7 @@ namespace GameDevStudio.Core
 
             GameEventBus.Publish(new NotificationEvent
             {
-                Message  = $"'{project.Title}' entered {next.ToString()} phase!",
+                Message  = $"'{project.Title}' entered {project.GetPhaseLabel()} phase!",
                 Severity = NotificationSeverity.Info
             });
         }
@@ -252,6 +254,19 @@ namespace GameDevStudio.Core
         {
             project.Phase      = ProjectPhase.Released;
             project.IsReleased = true;
+
+            // Unassign all employees from the released project
+            var staffManager = GameManager.Instance.Staff;
+            foreach (var empId in project.AssignedEmployeeIds)
+            {
+                var emp = staffManager.GetEmployee(empId);
+                if (emp != null && emp.AssignedTaskId == project.Id)
+                {
+                    emp.Status         = EmployeeStatus.Idle;
+                    emp.AssignedTaskId = null;
+                }
+            }
+            project.AssignedEmployeeIds.Clear();
 
             var studio  = GameManager.Instance.Studio;
             var genre   = GameDatabase.Instance.GetGenre(project.GenreId);
@@ -282,7 +297,9 @@ namespace GameDevStudio.Core
             project.WeeksOnSale  = 0;
 
             studio.AddMoney(project.TotalRevenue);
-            studio.AddReputation((project.ReviewScore - 5f) * 2f);
+            float reputationBase       = (project.ReviewScore - 5f) * 2f;
+            float reputationMultiplier = studio.GetReputationGainMultiplier();
+            studio.AddReputation(reputationBase * reputationMultiplier);
             studio.Stats.GamesReleased++;
 
             if (project.ReviewScore >= 8f)

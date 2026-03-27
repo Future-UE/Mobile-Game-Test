@@ -5,7 +5,7 @@ namespace GameDevStudio.UI
 {
     /// <summary>
     /// Root UI controller.  Manages which "screen" (panel) is currently visible.
-    /// Attach to a canvas root GameObject in the Bootstrap scene.
+    /// Attach to a canvas root GameObject in the Main scene.
     /// </summary>
     public class UIManager : MonoBehaviour
     {
@@ -61,20 +61,18 @@ namespace GameDevStudio.UI
 
         private void ShowPanel(GameObject target)
         {
-            // Hide all panels then show the target
-            GameObject[] all =
+            // Hide per-screen panels then show the target.
+            // MainHUDPanel is a persistent navigation overlay — never hidden.
+            // NotificationPanel and EventPanel are overlays — managed separately.
+            GameObject[] screens =
             {
-                MainHUDPanel, ProjectsPanel, StaffPanel, ResearchPanel,
+                ProjectsPanel, StaffPanel, ResearchPanel,
                 NewProjectPanel, HirePanel, SettingsPanel
             };
-            foreach (var p in all)
+            foreach (var p in screens)
                 if (p != null) p.SetActive(false);
 
             if (target != null) target.SetActive(true);
-
-            // Event and notification panels always stay on top
-            if (EventPanel        != null) EventPanel.SetActive(false);
-            if (NotificationPanel != null) NotificationPanel.SetActive(false);
         }
 
         public void ShowEventPanel()

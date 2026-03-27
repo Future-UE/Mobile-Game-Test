@@ -144,8 +144,11 @@ namespace GameDevStudio.Core
                 studio.UnlockGenre(genreId);
             foreach (var platformId in nodeData.UnlocksPlatformIds)
                 studio.UnlockPlatform(platformId);
+            foreach (var staffRoleId in nodeData.UnlocksStaffRoleIds)
+                studio.UnlockStaffRole(staffRoleId);
 
-            studio.Stats.CompletedResearchIds.Add(node.NodeId);
+            if (!studio.Stats.CompletedResearchIds.Contains(node.NodeId))
+                studio.Stats.CompletedResearchIds.Add(node.NodeId);
 
             GameEventBus.Publish(new ResearchCompletedEvent
             {
@@ -163,6 +166,7 @@ namespace GameDevStudio.Core
         public void ForceComplete(string nodeId)
         {
             if (!_nodes.TryGetValue(nodeId, out var node)) return;
+            if (node.IsCompleted) return;
             var nodeData = GameDatabase.Instance.GetResearch(nodeId);
             if (nodeData == null) return;
             node.Status = ResearchStatus.InProgress;
