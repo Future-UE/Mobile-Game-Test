@@ -1,3 +1,4 @@
+using GameDevStudio.Data;
 using GameDevStudio.Events;
 using GameDevStudio.Models;
 
@@ -15,9 +16,20 @@ namespace GameDevStudio.Core
         public void Initialise(string studioName)
         {
             Stats = new StudioStats { StudioName = studioName };
-            // Unlock starter genre & platform
-            Stats.UnlockedGenreIds.Add("genre_action");
-            Stats.UnlockedPlatformIds.Add("platform_mobile");
+
+            // Unlock all genres, platforms, and staff roles that start unlocked
+            // according to their data assets — no hard-coded ids needed.
+            foreach (var kv in GameDatabase.Instance.Genres)
+                if (kv.Value.StartsUnlocked)
+                    Stats.UnlockedGenreIds.Add(kv.Key);
+
+            foreach (var kv in GameDatabase.Instance.Platforms)
+                if (kv.Value.StartsUnlocked)
+                    Stats.UnlockedPlatformIds.Add(kv.Key);
+
+            foreach (var kv in GameDatabase.Instance.StaffRoles)
+                if (kv.Value.StartsUnlocked)
+                    Stats.UnlockedStaffRoleIds.Add(kv.Key);
         }
 
         public void RestoreStats(StudioStats saved) => Stats = saved;
@@ -110,7 +122,30 @@ namespace GameDevStudio.Core
                 Stats.UnlockedPlatformIds.Add(platformId);
         }
 
-        public bool IsGenreUnlocked(string genreId)    => Stats.UnlockedGenreIds.Contains(genreId);
-        public bool IsPlatformUnlocked(string platform) => Stats.UnlockedPlatformIds.Contains(platform);
+        public void UnlockStaffRole(string staffRoleId)
+        {
+            if (!Stats.UnlockedStaffRoleIds.Contains(staffRoleId))
+                Stats.UnlockedStaffRoleIds.Add(staffRoleId);
+        }
+
+        // Remove the closing brace that was previously the end of the class
     }
+}
+
+        // ── Reputation gain multiplier ────────────────────────────────────────
+        /// <summary>
+        /// Aggregates the ReputationGainMultiplier from all completed research nodes.
+        /// Returns 1.0 when no relevant research is completed.
+        /// </summary>
+        public float GetReputationGainMultiplier()
+        {
+            float multiplier = 1f;
+            foreach (var nodeId in Stats.CompletedResearchIds)
+            {
+                var data = GameDatabase.Instance.GetResearch(nodeId);
+                if (data != null && data.ReputationGainMultiplier > 1f)
+                    multiplier *= data.ReputationGainMultiplier;
+            }
+            return multiplier;
+        }
 }

@@ -41,6 +41,7 @@ namespace GameDevStudio.Models
         // ── Unlocks ───────────────────────────────────────────────────────────
         public List<string> UnlockedGenreIds     = new List<string>();
         public List<string> UnlockedPlatformIds  = new List<string>();
+        public List<string> UnlockedStaffRoleIds = new List<string>();
         public List<string> CompletedResearchIds = new List<string>();
 
         // ── Helpers ───────────────────────────────────────────────────────────

@@ -51,9 +51,14 @@ namespace GameDevStudio.Core
         private void Start()
         {
             if (Save.HasSaveFile())
+            {
                 Save.Load();
+                _isRunning = true;
+            }
             else
+            {
                 StartNewGame();
+            }
         }
 
         private void Update()

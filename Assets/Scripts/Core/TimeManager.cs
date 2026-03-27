@@ -13,7 +13,6 @@ namespace GameDevStudio.Core
 
         // ── State ─────────────────────────────────────────────────────────────
         private float _accumulator;
-        private int   _totalWeeks;
 
         public int CurrentWeek  { get; private set; } = 1;  // 1-4
         public int CurrentMonth { get; private set; } = 1;  // 1-12
@@ -34,10 +33,11 @@ namespace GameDevStudio.Core
         public void Tick(float deltaTime)
         {
             _accumulator += deltaTime;
-            if (_accumulator < _secondsPerWeek) return;
-
-            _accumulator -= _secondsPerWeek;
-            AdvanceWeek();
+            while (_accumulator >= _secondsPerWeek)
+            {
+                _accumulator -= _secondsPerWeek;
+                AdvanceWeek();
+            }
         }
 
         /// <summary>Manually advance one week (useful for tests / cheat button).</summary>
@@ -46,7 +46,6 @@ namespace GameDevStudio.Core
         // ── Internal ──────────────────────────────────────────────────────────
         private void AdvanceWeek()
         {
-            _totalWeeks++;
             CurrentWeek++;
 
             if (CurrentWeek > 4)

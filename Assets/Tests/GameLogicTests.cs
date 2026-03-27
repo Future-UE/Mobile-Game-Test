@@ -105,7 +105,7 @@ namespace GameDevStudio.Tests
     public class EmployeeTests
     {
         [Test]
-        public void MoraleMultiplier_Is1_AtFullMorale()
+        public void MoraleMultiplier_Is1_5_AtFullMorale()
         {
             var emp = new Employee { Morale = 100f };
             Assert.AreEqual(1.5f, emp.MoraleMultiplier, 0.001f);

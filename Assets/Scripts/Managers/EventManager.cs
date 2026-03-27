@@ -108,7 +108,6 @@ namespace GameDevStudio.Core
 
         public void TriggerOnHire()
         {
-            int count = GameManager.Instance.Staff.AllEmployees.Count;
             foreach (var ev in GameDatabase.Instance.Events.Values
                 .Where(e => e.Trigger == EventTrigger.OnHire
                          && (!e.OneTimeOnly || !_firedOneTime.Contains(e.EventId))))

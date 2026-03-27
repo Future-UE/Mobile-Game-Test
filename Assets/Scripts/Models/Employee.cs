@@ -24,7 +24,7 @@ namespace GameDevStudio.Models
 
         // ── Employment ────────────────────────────────────────────────────────
         public float WeeklySalary;
-        /// <summary>Months employed at this studio.</summary>
+        /// <summary>Weeks employed at this studio.</summary>
         public int   Tenure;
         /// <summary>0=Idle, 1=Working on project, 2=Researching, 3=Training</summary>
         public EmployeeStatus Status = EmployeeStatus.Idle;
