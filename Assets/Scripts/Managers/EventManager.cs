@@ -10,12 +10,26 @@ namespace GameDevStudio.Core
     /// <summary>
     /// Drives random and triggered in-game events.
     /// Manages the event queue so the UI can present one event at a time.
+    /// Subscribes to <see cref="WeekTickEvent"/> and self-processes event logic
+    /// instead of relying on GameManager to call it manually.
     /// </summary>
     public class EventManager
     {
         // ── State ─────────────────────────────────────────────────────────────
         private readonly Queue<RandomEventData> _eventQueue   = new();
         private readonly HashSet<string>        _firedOneTime = new();
+
+        // ── Constructor ───────────────────────────────────────────────────────
+        public EventManager()
+        {
+            GameEventBus.Subscribe<WeekTickEvent>(OnWeekTick);
+        }
+
+        /// <summary>Unsubscribes from the event bus. Called by GameManager.OnDestroy.</summary>
+        public void Cleanup()
+        {
+            GameEventBus.Unsubscribe<WeekTickEvent>(OnWeekTick);
+        }
 
         // ── Public pending events ─────────────────────────────────────────────
         public bool              HasPendingEvent  => _eventQueue.Count > 0;
@@ -27,12 +41,14 @@ namespace GameDevStudio.Core
         }
 
         // ── Weekly tick ───────────────────────────────────────────────────────
-        public void OnWeekPassed(StudioStats stats, WeekPassedEvent e)
+        private void OnWeekTick(WeekTickEvent e)
         {
+            if (GameManager.Instance == null) return;
+            var stats = GameManager.Instance.Studio.Stats;
             int totalMonths = (e.Year - 1) * 12 + e.Month;
 
             // Tick post-release sales
-            GameManager.Instance.Projects.TickReleasedSales(stats);
+            GameManager.Instance.Projects.TickReleasedSales();
 
             // Try fire a random event once per month (week 1 of each month)
             if (e.Week == 1)
@@ -40,7 +56,7 @@ namespace GameDevStudio.Core
 
             // Year-start events
             if (e.Week == 1 && e.Month == 1)
-                TryFireYearStartEvents(stats, e.Year);
+                TryFireYearStartEvents(e.Year);
 
             // Reputation threshold events
             TryFireReputationEvents(stats);
@@ -72,7 +88,7 @@ namespace GameDevStudio.Core
             }
         }
 
-        private void TryFireYearStartEvents(StudioStats stats, int year)
+        private void TryFireYearStartEvents(int year)
         {
             foreach (var ev in GameDatabase.Instance.Events.Values
                 .Where(e => e.Trigger == EventTrigger.OnYearStart

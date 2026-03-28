@@ -219,8 +219,8 @@ namespace GameDevStudio.Tests
         public void Subscribe_And_Publish_CallsListener()
         {
             bool called = false;
-            GameEventBus.Subscribe<WeekPassedEvent>(e => called = true);
-            GameEventBus.Publish(new WeekPassedEvent { Week = 1, Month = 1, Year = 1 });
+            GameEventBus.Subscribe<WeekTickEvent>(e => called = true);
+            GameEventBus.Publish(new WeekTickEvent { Week = 1, Month = 1, Year = 1 });
             GameEventBus.Clear();
             Assert.IsTrue(called);
         }
@@ -229,11 +229,11 @@ namespace GameDevStudio.Tests
         public void Unsubscribe_PreventsListenerFromBeingCalled()
         {
             bool called = false;
-            void Handler(WeekPassedEvent e) => called = true;
+            void Handler(WeekTickEvent e) => called = true;
 
-            GameEventBus.Subscribe<WeekPassedEvent>(Handler);
-            GameEventBus.Unsubscribe<WeekPassedEvent>(Handler);
-            GameEventBus.Publish(new WeekPassedEvent { Week = 1, Month = 1, Year = 1 });
+            GameEventBus.Subscribe<WeekTickEvent>(Handler);
+            GameEventBus.Unsubscribe<WeekTickEvent>(Handler);
+            GameEventBus.Publish(new WeekTickEvent { Week = 1, Month = 1, Year = 1 });
             GameEventBus.Clear();
             Assert.IsFalse(called);
         }
@@ -242,8 +242,8 @@ namespace GameDevStudio.Tests
         public void Publish_PassesCorrectEventData()
         {
             int receivedYear = 0;
-            GameEventBus.Subscribe<WeekPassedEvent>(e => receivedYear = e.Year);
-            GameEventBus.Publish(new WeekPassedEvent { Week = 3, Month = 6, Year = 5 });
+            GameEventBus.Subscribe<WeekTickEvent>(e => receivedYear = e.Year);
+            GameEventBus.Publish(new WeekTickEvent { Week = 3, Month = 6, Year = 5 });
             GameEventBus.Clear();
             Assert.AreEqual(5, receivedYear);
         }
@@ -263,10 +263,51 @@ namespace GameDevStudio.Tests
         public void Clear_RemovesAllListeners()
         {
             bool called = false;
-            GameEventBus.Subscribe<WeekPassedEvent>(_ => called = true);
+            GameEventBus.Subscribe<WeekTickEvent>(_ => called = true);
             GameEventBus.Clear();
-            GameEventBus.Publish(new WeekPassedEvent { Week = 1 });
+            GameEventBus.Publish(new WeekTickEvent { Week = 1 });
             Assert.IsFalse(called);
+        }
+
+        [Test]
+        public void Subscribe_DuplicateDelegate_IsIgnored()
+        {
+            int callCount = 0;
+            void Handler(WeekTickEvent e) => callCount++;
+
+            GameEventBus.Subscribe<WeekTickEvent>(Handler);
+            GameEventBus.Subscribe<WeekTickEvent>(Handler); // duplicate — should be ignored
+            GameEventBus.Publish(new WeekTickEvent { Week = 1 });
+            GameEventBus.Clear();
+
+            // Listener should only be called once despite two Subscribe calls.
+            Assert.AreEqual(1, callCount);
+        }
+
+        [Test]
+        public void GetListenerCount_ReturnsCorrectCount()
+        {
+            GameEventBus.Subscribe<MoneyChangedEvent>(_ => { });
+            GameEventBus.Subscribe<MoneyChangedEvent>(_ => { });
+            int count = GameEventBus.GetListenerCount<MoneyChangedEvent>();
+            GameEventBus.Clear();
+            Assert.AreEqual(2, count);
+        }
+
+        [Test]
+        public void GetListenerCount_ReturnsZero_WhenNoSubscribers()
+        {
+            // Use a distinct event type to avoid interference from other tests.
+            Assert.AreEqual(0, GameEventBus.GetListenerCount<ReputationChangedEvent>());
+        }
+
+        [Test]
+        public void DebugMode_CanBeToggled()
+        {
+            GameEventBus.DebugMode = true;
+            Assert.IsTrue(GameEventBus.DebugMode);
+            GameEventBus.DebugMode = false;
+            Assert.IsFalse(GameEventBus.DebugMode);
         }
     }
 }

@@ -10,10 +10,24 @@ namespace GameDevStudio.Core
     /// <summary>
     /// Manages the research tree: unlocking nodes, progressing research, and
     /// applying completed node effects to the studio.
+    /// Subscribes to <see cref="WeekTickEvent"/> and self-advances research progress
+    /// instead of relying on GameManager to call it manually.
     /// </summary>
     public class ResearchManager
     {
         private readonly Dictionary<string, ResearchNode> _nodes = new();
+
+        // ── Constructor ───────────────────────────────────────────────────────
+        public ResearchManager()
+        {
+            GameEventBus.Subscribe<WeekTickEvent>(OnWeekTick);
+        }
+
+        /// <summary>Unsubscribes from the event bus. Called by GameManager.OnDestroy.</summary>
+        public void Cleanup()
+        {
+            GameEventBus.Unsubscribe<WeekTickEvent>(OnWeekTick);
+        }
 
         // ── Initialisation ────────────────────────────────────────────────────
         public void Initialise()
@@ -107,7 +121,7 @@ namespace GameDevStudio.Core
         }
 
         // ── Weekly tick ───────────────────────────────────────────────────────
-        public void OnWeekPassed(StudioStats stats)
+        private void OnWeekTick(WeekTickEvent e)
         {
             foreach (var node in _nodes.Values.Where(n => n.IsInProgress).ToList())
             {
@@ -120,8 +134,8 @@ namespace GameDevStudio.Core
                     CompleteResearch(node, nodeData);
             }
 
-            // Re-evaluate locked nodes to see if they've become available
-            RefreshAvailability(stats);
+            // Re-evaluate locked nodes to see if they've become available.
+            RefreshAvailability();
         }
 
         // ── Completion ────────────────────────────────────────────────────────
@@ -174,8 +188,10 @@ namespace GameDevStudio.Core
         }
 
         // ── Availability refresh ──────────────────────────────────────────────
-        public void RefreshAvailability(StudioStats stats)
+        public void RefreshAvailability()
         {
+            if (GameManager.Instance == null) return;
+            var stats = GameManager.Instance.Studio.Stats;
             foreach (var kv in _nodes)
             {
                 var node     = kv.Value;
