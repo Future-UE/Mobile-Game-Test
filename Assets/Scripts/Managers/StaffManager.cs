@@ -10,10 +10,24 @@ namespace GameDevStudio.Core
 {
     /// <summary>
     /// Manages hiring, firing, training, and weekly processing of all employees.
+    /// Subscribes to <see cref="WeekTickEvent"/> and processes weekly salary/morale
+    /// automatically instead of relying on GameManager to call it manually.
     /// </summary>
     public class StaffManager
     {
         private readonly List<Employee> _employees = new();
+
+        // ── Constructor ───────────────────────────────────────────────────────
+        public StaffManager()
+        {
+            GameEventBus.Subscribe<WeekTickEvent>(OnWeekTick);
+        }
+
+        /// <summary>Unsubscribes from the event bus. Called by GameManager.OnDestroy.</summary>
+        public void Cleanup()
+        {
+            GameEventBus.Unsubscribe<WeekTickEvent>(OnWeekTick);
+        }
 
         // ── Name pools for procedural generation ──────────────────────────────
         private static readonly string[] FirstNames =
@@ -189,7 +203,7 @@ namespace GameDevStudio.Core
         }
 
         // ── Weekly tick ───────────────────────────────────────────────────────
-        public void OnWeekPassed(StudioStats stats)
+        private void OnWeekTick(WeekTickEvent e)
         {
             float totalSalary = 0f;
             foreach (var emp in _employees)

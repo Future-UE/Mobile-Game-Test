@@ -11,10 +11,24 @@ namespace GameDevStudio.Core
 {
     /// <summary>
     /// Handles creation, development simulation, and release of game projects.
+    /// Subscribes to <see cref="WeekTickEvent"/> and advances project phases
+    /// automatically instead of relying on GameManager to call it manually.
     /// </summary>
     public class ProjectManager
     {
         private readonly List<GameProject> _projects = new();
+
+        // ── Constructor ───────────────────────────────────────────────────────
+        public ProjectManager()
+        {
+            GameEventBus.Subscribe<WeekTickEvent>(OnWeekTick);
+        }
+
+        /// <summary>Unsubscribes from the event bus. Called by GameManager.OnDestroy.</summary>
+        public void Cleanup()
+        {
+            GameEventBus.Unsubscribe<WeekTickEvent>(OnWeekTick);
+        }
 
         // ── Restore from save ─────────────────────────────────────────────────
         public void RestoreProjects(GameProject[] saved)
@@ -112,13 +126,13 @@ namespace GameDevStudio.Core
         }
 
         // ── Weekly tick ───────────────────────────────────────────────────────
-        public void OnWeekPassed(StudioStats stats)
+        private void OnWeekTick(WeekTickEvent e)
         {
             foreach (var project in _projects.Where(p => !p.IsReleased).ToList())
-                TickProject(project, stats);
+                TickProject(project);
         }
 
-        private void TickProject(GameProject project, StudioStats stats)
+        private void TickProject(GameProject project)
         {
             // Gather assigned staff contributions
             float programming = 0, art = 0, design = 0, testing = 0;
@@ -323,7 +337,7 @@ namespace GameDevStudio.Core
 
         // ── Ongoing sales ─────────────────────────────────────────────────────
         /// <summary>Called by EventManager to drip post-release sales each week.</summary>
-        public void TickReleasedSales(StudioStats stats)
+        public void TickReleasedSales()
         {
             foreach (var project in _projects.Where(p => p.IsReleased))
             {

@@ -1,6 +1,5 @@
 using UnityEngine;
 using GameDevStudio.Data;
-using GameDevStudio.Models;
 using GameDevStudio.Events;
 
 namespace GameDevStudio.Core
@@ -75,13 +74,11 @@ namespace GameDevStudio.Core
             Save     = new SaveSystem();
             Time     = new TimeManager(SecondsPerWeek);
             Studio   = new StudioManager();
-            Projects = new ProjectManager();
+            // Staff subscribes first so salaries are paid before project ticks run.
             Staff    = new StaffManager();
+            Projects = new ProjectManager();
             Research = new ResearchManager();
             Events   = new EventManager();
-
-            // Wire up cross-system subscriptions
-            GameEventBus.Subscribe<WeekPassedEvent>(OnWeekPassed);
         }
 
         private void StartNewGame()
@@ -97,15 +94,6 @@ namespace GameDevStudio.Core
             });
         }
 
-        // ── Week tick ─────────────────────────────────────────────────────────
-        private void OnWeekPassed(WeekPassedEvent e)
-        {
-            Staff.OnWeekPassed(Studio.Stats);
-            Projects.OnWeekPassed(Studio.Stats);
-            Research.OnWeekPassed(Studio.Stats);
-            Events.OnWeekPassed(Studio.Stats, e);
-        }
-
         // ── Public API ────────────────────────────────────────────────────────
         public void SetPaused(bool paused)
         {
@@ -116,7 +104,11 @@ namespace GameDevStudio.Core
 
         private void OnDestroy()
         {
-            GameEventBus.Unsubscribe<WeekPassedEvent>(OnWeekPassed);
+            // Allow each manager to clean up its own event subscriptions.
+            Staff?.Cleanup();
+            Projects?.Cleanup();
+            Research?.Cleanup();
+            Events?.Cleanup();
         }
     }
 }

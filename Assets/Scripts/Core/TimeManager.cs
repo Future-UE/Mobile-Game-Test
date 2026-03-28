@@ -4,7 +4,7 @@ namespace GameDevStudio.Core
 {
     /// <summary>
     /// Tracks real-time elapsed seconds and converts them into in-game weeks,
-    /// firing <see cref="WeekPassedEvent"/> at each boundary.
+    /// firing <see cref="WeekTickEvent"/> at each boundary.
     /// </summary>
     public class TimeManager
     {
@@ -60,7 +60,7 @@ namespace GameDevStudio.Core
                 }
             }
 
-            GameEventBus.Publish(new WeekPassedEvent
+            GameEventBus.Publish(new WeekTickEvent
             {
                 Week  = CurrentWeek,
                 Month = CurrentMonth,

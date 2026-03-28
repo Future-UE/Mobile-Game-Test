@@ -40,7 +40,7 @@ namespace GameDevStudio.UI
             PauseButton?.onClick.AddListener(OnPauseToggle);
             UpgradeOfficeButton?.onClick.AddListener(OnUpgradeOffice);
 
-            GameEventBus.Subscribe<WeekPassedEvent>(OnWeekPassed);
+            GameEventBus.Subscribe<WeekTickEvent>(OnWeekTick);
             GameEventBus.Subscribe<MoneyChangedEvent>(OnMoneyChanged);
             GameEventBus.Subscribe<ReputationChangedEvent>(OnRepChanged);
 
@@ -49,13 +49,13 @@ namespace GameDevStudio.UI
 
         private void OnDestroy()
         {
-            GameEventBus.Unsubscribe<WeekPassedEvent>(OnWeekPassed);
+            GameEventBus.Unsubscribe<WeekTickEvent>(OnWeekTick);
             GameEventBus.Unsubscribe<MoneyChangedEvent>(OnMoneyChanged);
             GameEventBus.Unsubscribe<ReputationChangedEvent>(OnRepChanged);
         }
 
         // ── Event handlers ────────────────────────────────────────────────────
-        private void OnWeekPassed(WeekPassedEvent e)   => RefreshAll();
+        private void OnWeekTick(WeekTickEvent e)      => RefreshAll();
         private void OnMoneyChanged(MoneyChangedEvent e)=> RefreshMoney();
         private void OnRepChanged(ReputationChangedEvent e) => RefreshReputation();
 
