@@ -19,13 +19,14 @@ Manage your indie game studio: hire staff, develop games, research upgrades, rea
 10. [Step 8 — Create the Main Scene](#step-8--create-the-main-scene)
 11. [Step 9 — Create UI Prefabs](#step-9--create-ui-prefabs)
 12. [Step 10 — Configure Build Settings & Run](#step-10--configure-build-settings--run)
-13. [Project Structure](#-project-structure)
-14. [Gameplay Loop](#-gameplay-loop)
-15. [Adding New Content](#-adding-new-content)
-16. [Running Tests](#-running-tests)
-17. [Architecture Decisions](#-architecture-decisions)
-18. [Mobile Considerations](#-mobile-considerations)
-19. [Roadmap](#-roadmap--expandability-ideas)
+13. [Step 11 — Optional: One-Click Automated Setup](#step-11--optional-one-click-automated-setup)
+14. [Project Structure](#-project-structure)
+15. [Gameplay Loop](#-gameplay-loop)
+16. [Adding New Content](#-adding-new-content)
+17. [Running Tests](#-running-tests)
+18. [Architecture Decisions](#-architecture-decisions)
+19. [Mobile Considerations](#-mobile-considerations)
+20. [Roadmap](#-roadmap--expandability-ideas)
 
 ---
 
@@ -207,17 +208,33 @@ The Main scene contains all the game UI and the GameManager.
 2. With it selected, click **Add Component** in the Inspector.
 3. Search for `GameManager` and select the **GameManager** script.
 4. You'll see two Inspector fields you can customise:
-   - **Seconds Per Week** — how many real seconds pass between each in-game week (default: `5`).
-   - **Default Studio Name** — the name shown when starting a new game (default: `Indie Dreams Studio`).
+    - **Seconds Per Week** — how many real seconds pass between each in-game week (default: `5`).
+    - **Default Studio Name** — the name shown when starting a new game (default: `Indie Dreams Studio`).
+
+### 8b.1 Add and Configure the Camera (Critical)
+
+If the Main scene has no correctly configured camera, you'll often get a blank/white screen even when scripts are present.
+
+1. In the Hierarchy, right-click → **Camera**.
+2. Rename it to **Main Camera**.
+3. Select it and verify in the Inspector:
+   - **Tag** = `MainCamera`
+   - **Projection** = `Orthographic` (recommended for this 2D UI-first setup)
+   - **Position** = `X: 0, Y: 0, Z: -10`
+   - **Clear Flags** = `Solid Color`
+   - **Background** = any non-white color (for example a dark blue/gray) so camera rendering is obvious during debugging
+4. Make sure there is **only one active Audio Listener** in the scene (usually on the Main Camera).
+5. Press Play once and confirm the Game view is rendering (not a flat white frame with no UI updates).
 
 ### 8c. Add the UI Canvas
 
 1. In the Hierarchy, right-click → **UI → Canvas**. Unity creates a Canvas with an EventSystem automatically.
 2. Select the **Canvas** object. In the Inspector, set:
-   - **Render Mode** → `Screen Space - Overlay`
+    - **Render Mode** → `Screen Space - Overlay`
    - **UI Scale Mode** → `Scale With Screen Size`
-   - **Reference Resolution** → `1080 x 1920` (standard portrait mobile)
-   - **Match** → `0.5` (balances width and height scaling)
+    - **Reference Resolution** → `1080 x 1920` (standard portrait mobile)
+    - **Match** → `0.5` (balances width and height scaling)
+3. In the Canvas component, verify **Render Camera is empty** (for Screen Space - Overlay).
 
 3. With the Canvas selected, click **Add Component**, search for `UIManager`, and add the **UIManager** script.
 
@@ -308,6 +325,31 @@ After creating the prefabs, assign them in each panel's script via the Inspector
 > - Make sure all prefab slots are assigned in each panel's Inspector.
 > - Make sure `UIManager` has all six panel slots filled.
 > - Make sure the `GameBootstrap` script's **Main Scene Name** is exactly `Main` (capital M, matching your scene name).
+> - Make sure `Main` has an active **Main Camera** tagged `MainCamera`.
+> - Make sure **Bootstrap** is at build index 0 and both `Bootstrap` and `Main` are in **Scenes In Build**.
+> - Make sure the **Main scene contains a `GameManager` object** with the `GameManager` script attached.
+> - If the screen is white with no UI, re-check camera `Clear Flags`, camera tag, and that the Canvas is `Screen Space - Overlay`.
+
+---
+
+## Step 11 — Optional: One-Click Automated Setup
+
+To reduce manual setup mistakes and make this process easier to automate later:
+
+1. In Unity, open **Tools → GameDevStudio → Setup**.
+2. Choose one of:
+   - **Automate Initial Scene Setup**  
+     Creates `Assets/Scenes/Bootstrap.unity` and `Assets/Scenes/Main.unity`, adds `GameBootstrap`, `GameManager`, `Main Camera`, `Canvas`, `UIManager`, basic panel roots, and updates Build Settings.
+   - **Automate Initial Setup + Default Data**  
+     Runs all of the above and also runs **Create Default Data Assets**.
+3. (Recommended) Run **Tools → GameDevStudio → Setup → Validate Setup (White Screen Checks)**.
+   - This checks common white-screen causes:
+     - Missing `GameBootstrap` or empty `Main Scene Name`
+     - Missing main camera / wrong camera tag expectations
+     - Missing `UIManager` panel assignments
+     - Missing scenes in Build Settings / wrong Bootstrap index
+
+> **Important:** This automation creates scene skeletons and wiring. You still need to build/populate panel internals and prefabs for full gameplay UI.
 
 ---
 
