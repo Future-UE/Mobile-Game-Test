@@ -5,6 +5,8 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using System.Collections.Generic;
+using System.IO;
 using GameDevStudio.Core;
 using GameDevStudio.UI;
 
@@ -54,29 +56,49 @@ namespace GameDevStudio.Editor
         {
             var issues = "";
 
-            var bootstrapScene = EditorSceneManager.OpenScene(BootstrapScenePath, OpenSceneMode.Single);
-            var bootstrap = Object.FindObjectOfType<GameBootstrap>();
-            if (bootstrap == null)
-                issues += "- Bootstrap scene is missing a GameBootstrap component.\n";
-            else if (string.IsNullOrWhiteSpace(bootstrap.MainSceneName))
-                issues += "- GameBootstrap.MainSceneName is empty.\n";
-
-            var mainScene = EditorSceneManager.OpenScene(MainScenePath, OpenSceneMode.Single);
-            var mainCamera = Camera.main;
-            if (mainCamera == null)
-                issues += "- Main scene is missing a camera tagged MainCamera.\n";
-
-            var uiManager = Object.FindObjectOfType<UIManager>();
-            if (uiManager == null)
-                issues += "- Main scene is missing a UIManager on a Canvas.\n";
+            if (!File.Exists(BootstrapScenePath))
+            {
+                issues += "- Bootstrap scene file does not exist at Assets/Scenes/Bootstrap.unity.\n";
+            }
             else
             {
-                if (uiManager.MainHUDPanel == null) issues += "- UIManager.MainHUDPanel is not assigned.\n";
-                if (uiManager.ProjectsPanel == null) issues += "- UIManager.ProjectsPanel is not assigned.\n";
-                if (uiManager.StaffPanel == null) issues += "- UIManager.StaffPanel is not assigned.\n";
-                if (uiManager.ResearchPanel == null) issues += "- UIManager.ResearchPanel is not assigned.\n";
-                if (uiManager.EventPanel == null) issues += "- UIManager.EventPanel is not assigned.\n";
-                if (uiManager.NotificationPanel == null) issues += "- UIManager.NotificationPanel is not assigned.\n";
+                var bootstrapScene = EditorSceneManager.OpenScene(BootstrapScenePath, OpenSceneMode.Single);
+                var bootstrap = Object.FindObjectOfType<GameBootstrap>();
+                if (bootstrap == null)
+                    issues += "- Bootstrap scene is missing a GameBootstrap component.\n";
+                else if (string.IsNullOrWhiteSpace(bootstrap.MainSceneName))
+                    issues += "- GameBootstrap.MainSceneName is empty.\n";
+
+                if (string.IsNullOrEmpty(bootstrapScene.path))
+                    issues += "- Bootstrap scene could not be opened correctly.\n";
+            }
+
+            if (!File.Exists(MainScenePath))
+            {
+                issues += "- Main scene file does not exist at Assets/Scenes/Main.unity.\n";
+            }
+            else
+            {
+                var mainScene = EditorSceneManager.OpenScene(MainScenePath, OpenSceneMode.Single);
+                var mainCamera = Camera.main;
+                if (mainCamera == null)
+                    issues += "- Main scene is missing a camera tagged MainCamera.\n";
+
+                var uiManager = Object.FindObjectOfType<UIManager>();
+                if (uiManager == null)
+                    issues += "- Main scene is missing a UIManager on a Canvas.\n";
+                else
+                {
+                    if (uiManager.MainHUDPanel == null) issues += "- UIManager.MainHUDPanel is not assigned.\n";
+                    if (uiManager.ProjectsPanel == null) issues += "- UIManager.ProjectsPanel is not assigned.\n";
+                    if (uiManager.StaffPanel == null) issues += "- UIManager.StaffPanel is not assigned.\n";
+                    if (uiManager.ResearchPanel == null) issues += "- UIManager.ResearchPanel is not assigned.\n";
+                    if (uiManager.EventPanel == null) issues += "- UIManager.EventPanel is not assigned.\n";
+                    if (uiManager.NotificationPanel == null) issues += "- UIManager.NotificationPanel is not assigned.\n";
+                }
+
+                if (string.IsNullOrEmpty(mainScene.path))
+                    issues += "- Main scene could not be opened correctly.\n";
             }
 
             if (!SceneInBuildAtIndex(BootstrapScenePath, 0))
@@ -84,8 +106,10 @@ namespace GameDevStudio.Editor
             if (!SceneInBuild(MainScenePath))
                 issues += "- Main scene is not in Build Settings.\n";
 
-            EditorSceneManager.SaveOpenScenes();
-            EditorSceneManager.OpenScene(bootstrapScene.path, OpenSceneMode.Single);
+            if (string.IsNullOrEmpty(issues))
+                EditorSceneManager.SaveOpenScenes();
+            if (File.Exists(BootstrapScenePath))
+                EditorSceneManager.OpenScene(BootstrapScenePath, OpenSceneMode.Single);
 
             if (string.IsNullOrEmpty(issues))
             {
@@ -195,20 +219,8 @@ namespace GameDevStudio.Editor
             uiManager.NotificationPanelUI = notificationPanel;
         }
 
-        private static RectTransform CreateFullscreenPanel(Transform parent, string name, bool active)
-        {
-            var go = new GameObject(name, typeof(RectTransform));
-            go.transform.SetParent(parent, false);
-
-            var rt = go.GetComponent<RectTransform>();
-            rt.anchorMin = Vector2.zero;
-            rt.anchorMax = Vector2.one;
-            rt.offsetMin = Vector2.zero;
-            rt.offsetMax = Vector2.zero;
-
-            go.SetActive(active);
-            return rt;
-        }
+        private static RectTransform CreateFullscreenPanel(Transform parent, string name, bool active) =>
+            CreateFullscreenPanel<RectTransform>(parent, name, active);
 
         private static T CreateFullscreenPanel<T>(Transform parent, string name, bool active) where T : Component
         {
@@ -239,14 +251,14 @@ namespace GameDevStudio.Editor
         private static void EnsureBuildSettings()
         {
             var current = EditorBuildSettings.scenes;
-            var map = new System.Collections.Generic.Dictionary<string, EditorBuildSettingsScene>();
+            var map = new Dictionary<string, EditorBuildSettingsScene>();
             foreach (var s in current)
                 map[s.path] = s;
 
             map[BootstrapScenePath] = new EditorBuildSettingsScene(BootstrapScenePath, true);
             map[MainScenePath] = new EditorBuildSettingsScene(MainScenePath, true);
 
-            var ordered = new System.Collections.Generic.List<EditorBuildSettingsScene>
+            var ordered = new List<EditorBuildSettingsScene>
             {
                 map[BootstrapScenePath]
             };

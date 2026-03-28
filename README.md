@@ -213,7 +213,7 @@ The Main scene contains all the game UI and the GameManager.
 
 ### 8b.1 Add and Configure the Camera (Critical)
 
-If the Main scene has no correctly configured camera, you'll often get a blank/white screen even when scripts are present.
+If the Main scene has no correctly configured camera, you will often get a blank/white screen even when scripts are present.
 
 1. In the Hierarchy, right-click → **Camera**.
 2. Rename it to **Main Camera**.
